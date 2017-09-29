@@ -1,6 +1,8 @@
 # Simplified unimpaired.vim
 
-Removed parts I don't use.
+Removed parts I don't use (e.g. html entity conversion). Loads 4x faster
+without.
+
 See original at <https://github.com/tpope/vim-unimpaired>
 
 ## License
