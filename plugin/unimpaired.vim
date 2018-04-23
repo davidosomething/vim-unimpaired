@@ -1,6 +1,6 @@
 " unimpaired.vim - Pairs of handy bracket mappings
 " Maintainer:   David O'Trakoun (@davidosomething)
-" Version:      2.0
+" Version:      3.0
 
 if exists("g:loaded_unimpaired") || &cp || v:version < 700
   finish
@@ -17,7 +17,7 @@ endfunction
 function! s:MapNextFamily(map,cmd) abort
   let map = '<Plug>unimpaired'.toupper(a:map)
   let cmd = '".(v:count ? v:count : "")."'.a:cmd
-  let end = '"<CR>'.(a:cmd == 'l' || a:cmd == 'c' ? 'zv' : '')
+  let end = '"<CR>'.(a:cmd ==# 'l' || a:cmd ==# 'c' ? 'zv' : '')
   execute 'nnoremap <silent> '.map.'Previous :<C-U>exe "'.cmd.'previous'.end
   execute 'nnoremap <silent> '.map.'Next     :<C-U>exe "'.cmd.'next'.end
   execute 'nnoremap <silent> '.map.'First    :<C-U>exe "'.cmd.'first'.end
@@ -34,22 +34,8 @@ function! s:MapNextFamily(map,cmd) abort
   endif
 endfunction
 
-call s:MapNextFamily('a','')
 call s:MapNextFamily('b','b')
 call s:MapNextFamily('t','t')
-
-function! s:entries(path)
-  let path = substitute(a:path,'[\\/]$','','')
-  let files = split(glob(path."/.*"),"\n")
-  let files += split(glob(path."/*"),"\n")
-  call map(files,'substitute(v:val,"[\\/]$","","")')
-  call filter(files,'v:val !~# "[\\\\/]\\.\\.\\=$"')
-
-  let filter_suffixes = substitute(escape(&suffixes, '~.*$^'), ',', '$\\|', 'g') .'$'
-  call filter(files, 'v:val !~# filter_suffixes')
-
-  return files
-endfunction
 
 " }}}1
 " Diff {{{1
@@ -64,11 +50,11 @@ nnoremap <silent> <Plug>unimpairedContextNext     :call <SID>Context(0)<CR>
 onoremap <silent> <Plug>unimpairedContextPrevious :call <SID>ContextMotion(1)<CR>
 onoremap <silent> <Plug>unimpairedContextNext     :call <SID>ContextMotion(0)<CR>
 
-function! s:Context(reverse)
+function! s:Context(reverse) abort
   call search('^\(@@ .* @@\|[<=>|]\{7}[<=>|]\@!\)', a:reverse ? 'bW' : 'W')
 endfunction
 
-function! s:ContextMotion(reverse)
+function! s:ContextMotion(reverse) abort
   if a:reverse
     -
   endif
