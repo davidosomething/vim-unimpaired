@@ -1,18 +1,41 @@
 " unimpaired.vim - Pairs of handy bracket mappings
 " Maintainer:   David O'Trakoun (@davidosomething)
-" Version:      3.0
+" Version:      4.0
 
 if exists("g:loaded_unimpaired") || &cp || v:version < 700
   finish
 endif
 let g:loaded_unimpaired = 1
 
-function! s:map(mode, lhs, rhs, ...) abort
-  let flags = (a:0 ? a:1 : '') . (a:rhs =~# '^<Plug>' ? '' : '<script>')
-  exe a:mode . 'map' flags a:lhs a:rhs
+let s:maps = []
+function! s:map(...) abort
+  call add(s:maps, a:000)
 endfunction
 
-" Next and previous {{{1
+function! s:maps() abort
+  for [mode, head, rhs; rest] in s:maps
+    let flags = get(rest, 0, '') . (rhs =~# '^<Plug>' ? '' : '<script>')
+    let tail = ''
+    let keys = get(g:, mode.'remap', {})
+    if type(keys) != type({})
+      continue
+    endif
+    while !empty(head)
+      if has_key(keys, head)
+        let head = keys[head]
+        if empty(head)
+          return
+        endif
+        break
+      endif
+      let tail = matchstr(head, '<[^<>]*>$\|.$') . tail
+      let head = substitute(head, '<[^<>]*>$\|.$', '', '')
+    endwhile
+    exe mode.'map' flags head.tail rhs
+  endfor
+endfunction
+
+" Section: Next and previous
 
 function! s:MapNextFamily(map,cmd) abort
   let map = '<Plug>unimpaired'.toupper(a:map)
@@ -26,19 +49,10 @@ function! s:MapNextFamily(map,cmd) abort
   call s:map('n', ']'.        a:map , map.'Next')
   call s:map('n', '['.toupper(a:map), map.'First')
   call s:map('n', ']'.toupper(a:map), map.'Last')
-  if exists(':'.a:cmd.'nfile')
-    execute 'nnoremap <silent> '.map.'PFile :<C-U>exe "'.cmd.'pfile'.end
-    execute 'nnoremap <silent> '.map.'NFile :<C-U>exe "'.cmd.'nfile'.end
-    call s:map('n', '[<C-'.toupper(a:map).'>', map.'PFile')
-    call s:map('n', ']<C-'.toupper(a:map).'>', map.'NFile')
-  endif
 endfunction
 
 call s:MapNextFamily('b','b')
 call s:MapNextFamily('t','t')
-
-" }}}1
-" Diff {{{1
 
 call s:map('n', '[n', '<Plug>unimpairedContextPrevious')
 call s:map('n', ']n', '<Plug>unimpairedContextNext')
@@ -84,5 +98,15 @@ function! s:ContextMotion(reverse) abort
   endif
 endfunction
 
-" }}}1
+" Section: Activation
+
+augroup unimpaired
+  autocmd!
+  autocmd VimEnter * call s:maps()
+augroup END
+
+if !has('vim_starting')
+  call s:maps()
+endif
+
 " vim:set sw=2 sts=2:
